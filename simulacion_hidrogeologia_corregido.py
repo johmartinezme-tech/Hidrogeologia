@@ -15,7 +15,7 @@ from typing import Optional
 # CONFIGURACIÓN DE PÁGINA
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="HidroGeo Lab",
+    page_title="Hidrogeologia",
     page_icon="💧",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -628,8 +628,8 @@ La facies evoluciona de **Bicarbonatada** (agua dulce) → **Clorurada Mixta** �
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
-  <h1>💧 HidroGeo Lab</h1>
-  <p>Plataforma Interactiva de Modelación y Enseñanza en Hidrogeología</p>
+  <h1>💧 Caracterización Química de Aguas Subterráneas</h1>
+  <p>Johan Sebastian Martinez Mesa</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -637,7 +637,7 @@ st.markdown("""
 # TABS PRINCIPALES
 # ─────────────────────────────────────────────
 tab1, tab2 = st.tabs([
-    "🔬 Herramienta de Modelación",
+    "🧮 Calculadora ionica",
     "📚 Biblioteca de Ambientes Geológicos"
 ])
 
@@ -743,27 +743,15 @@ with tab1:
                  })
 
     # ── Gráficos ──
-    st.markdown('<div class="section-title">📈 Diagramas Hidrogeoquímicos</div>',
+    st.markdown('<div class="section-title">📈 Diagrama Hidrogeoquímico</div>',
                 unsafe_allow_html=True)
 
-    gcol1, gcol2 = st.columns([3, 2])
+    st.markdown("**Diagrama de Stiff**")
+    fig_stiff = build_stiff_diagram(sample, "Firma Hidroquímica", "#1a73e8")
+    fig_stiff.update_layout(height=480)
+    st.plotly_chart(fig_stiff, use_container_width=True, config={"displayModeBar": False})
 
-    with gcol1:
-        st.markdown("**Diagrama de Piper**")
-        fig_piper = build_piper_background()
-        fig_piper = add_piper_point(fig_piper, sample, "Muestra actual", "#ef4444", 16)
-        fig_piper.update_layout(
-            title=dict(text=f"Piper — Facies: {facies_str}", font=dict(size=13, color="#0f4c81"), x=0.5),
-            height=480,
-        )
-        st.plotly_chart(fig_piper, use_container_width=True, config={"displayModeBar": False})
-
-    with gcol2:
-        st.markdown("**Diagrama de Stiff**")
-        fig_stiff = build_stiff_diagram(sample, "Firma Hidroquímica", "#1a73e8")
-        st.plotly_chart(fig_stiff, use_container_width=True, config={"displayModeBar": False})
-
-        st.markdown('<div class="info-box">ℹ️ El diagrama de Stiff grafica los cationes (izquierda) y aniones (derecha) en meq/L. La forma y extensión del polígono revela la "firma" química del acuífero.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">ℹ️ El diagrama de Stiff grafica los cationes (izquierda) y aniones (derecha) en meq/L. La forma y extensión del polígono revela la "firma" química del acuífero.</div>', unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════
@@ -792,56 +780,29 @@ with tab2:
     st.markdown("")
 
     # ── Gráficos del ambiente ──
-    ecol1, ecol2 = st.columns([3, 2])
+    st.markdown("**Diagrama de Stiff Representativo**")
+    fig_env_stiff = build_stiff_diagram(
+        env["stiff_sample"],
+        f"Stiff — {env_choice.split(' ', 1)[-1]}",
+        env["color"]
+    )
+    fig_env_stiff.update_layout(height=480)
+    st.plotly_chart(fig_env_stiff, use_container_width=True,
+                    config={"displayModeBar": False})
 
+    st.markdown(f"""
+    <div class="info-box">
+      📌 <i>{env["stiff_label"]}</i>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # tabla de composición del ejemplo
+    m_env = env["stiff_sample"].to_meq()
+    ebi_env = env["stiff_sample"].ionic_balance_error()
+    facies_env = env["stiff_sample"].facies()
+
+    ecol1, ecol2 = st.columns([1, 2])
     with ecol1:
-        st.markdown("**Diagrama de Piper de Referencia**")
-        fig_ref = build_piper_background()
-
-        # zona sombreada
-        zone_data = {
-            "name": f"Zona típica: {env_choice}",
-            "color": env["color"],
-            "line_color": env["line"],
-            "cat": env["piper_zones"].get("cat", []),
-            "an":  env["piper_zones"].get("an",  []),
-            "diamond": env["piper_zones"].get("diamond", []),
-        }
-        fig_ref = add_reference_zone(fig_ref, zone_data)
-
-        # punto de muestra de ejemplo
-        fig_ref = add_piper_point(fig_ref, env["stiff_sample"],
-                                  "Muestra típica", env["color"], 14)
-        fig_ref.update_layout(
-            title=dict(text=f"Zona típica — {env_choice.split(' ', 1)[-1]}",
-                       font=dict(size=13, color="#0f4c81"), x=0.5),
-            height=480,
-        )
-        st.plotly_chart(fig_ref, use_container_width=True, config={"displayModeBar": False})
-
-        st.markdown(f"""
-        <div class="info-box">
-          🔵 La <b>zona sombreada</b> indica el campo típico donde caen las muestras
-          de este ambiente. El punto representa una muestra representativa.
-          <br><br>📌 <i>{env["stiff_label"]}</i>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with ecol2:
-        st.markdown("**Diagrama de Stiff Representativo**")
-        fig_env_stiff = build_stiff_diagram(
-            env["stiff_sample"],
-            f"Stiff — {env_choice.split(' ', 1)[-1]}",
-            env["color"]
-        )
-        st.plotly_chart(fig_env_stiff, use_container_width=True,
-                        config={"displayModeBar": False})
-
-        # tabla de composición del ejemplo
-        m_env = env["stiff_sample"].to_meq()
-        ebi_env = env["stiff_sample"].ionic_balance_error()
-        facies_env = env["stiff_sample"].facies()
-
         st.markdown(f"""
         <div class="metric-card" style="margin-top:1rem">
           <div class="label">Facies de Referencia</div>
@@ -850,6 +811,7 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
 
+    with ecol2:
         st.markdown("")
         comp_data = {
             "Ion": ["Ca²⁺", "Mg²⁺", "Na⁺", "K⁺", "Cl⁻", "SO₄²⁻", "HCO₃⁻"],
